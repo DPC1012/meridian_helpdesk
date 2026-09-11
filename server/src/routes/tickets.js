@@ -73,10 +73,11 @@ router.patch('/:id/assign', requireAuth, async (req, res, next) => {
   }
 });
 
-router.delete('/:id', requireAuth, async (req, res, next) => {
+router.delete('/:id', requireAuth, requireRole('admin'), async (req, res, next) => {
   try {
     const ticket = await getTicketById(Number(req.params.id));
     if (!ticket) return res.status(404).json({ error: 'Not found' });
+    if (ticket.org_id !== req.user.orgId) return res.status(404).json({ error: 'Not found' });
     await deleteTicket(ticket.id);
     res.status(204).end();
   } catch (err) {
