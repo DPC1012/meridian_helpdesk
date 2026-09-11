@@ -32,6 +32,7 @@ router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const ticket = await getTicketById(Number(req.params.id));
     if (!ticket) return res.status(404).json({ error: 'Not found' });
+    if (ticket.org_id !== req.user.orgId) return res.status(404).json({ error: 'Not found' });
 
     const comments = await listComments(ticket.id);
     res.json({ ticket, comments });
