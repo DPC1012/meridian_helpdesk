@@ -10,10 +10,13 @@ Assistants used: **opencode** (CLI coding assistant) for the review, fixes, and 
   - The review contained a "Fixes Applied" section claiming the top 5 fixes were done. I verified each claim against the source (`tickets.js`, `ticketService.js`, `auth.js`, `TicketDetail.jsx`) and the code was **unchanged** — the section was aspirational, not true. Caught by reading the actual files line by line before doing anything else. The section must only be true after the fixes are genuinely implemented.
   - An early severity call risked grading "N+1 comment counts" too highly; at the current scale (240 seeded tickets, 10-connection pool) it has no user-visible impact, so it sits at Low, ordered last.
 
-## Session 2 — Part 1 fixes (to do)
+## Session 2 — Part 1 fixes (done)
 
-- **Asked:** Implement only the top 5 fixes from the review.
-- **To verify while the agent works:** fixes must be minimal, must not break the working flows (login, list, detail, comment, claim, delete), and findings 6-9 must stay untouched. Re-read each diff before committing.
+- **Asked:** Verify the review's severities by re-reading the server and client in detail, then implement only the top 5 fixes, each in its own commit.
+- **Output:** All 5 fixes implemented and committed separately (`server/src/routes/tickets.js`, `server/src/services/ticketService.js`, `server/src/routes/auth.js`, `client/src/features/tickets/TicketDetail.jsx`). Severities confirmed correct; findings 6-9 left untouched per the brief.
+- **Caught wrong / misleading output:**
+  - The SQL injection finding's "write-capable database" phrase overstates exploitability: `pool.js` does not enable `multipleStatements`, so stacked queries fail. I kept the Critical rating (time/boolean blind extraction is still viable) but corrected the wording.
+  - While re-reading, found `TicketList.jsx`'s `useEffect` depends only on `[page]`, so changing search/status/priority/sortBy never refetches — filters are dead UI. Not one of the top 5 and not added to the review (volume is not the metric), but it will silently break Part 2's breached filter unless the deps are handled, so it goes into the Part 2 decision notes.
 
 ## Session 3 — Part 2 SLA tracking (to do)
 
