@@ -9,6 +9,11 @@ const PAGE_SIZE = 20;
  * and sorting by any column the UI exposes in its dropdown.
  */
 export async function listTickets({ orgId, page = 1, search = '', status, priority, sortBy = 'created_at', order = 'desc' }) {
+  const ALLOWED_SORT = new Set(['created_at', 'updated_at', 'priority', 'status']);
+  const ALLOWED_ORDER = new Set(['asc', 'desc']);
+  const safeSortBy = ALLOWED_SORT.has(sortBy) ? sortBy : 'created_at';
+  const safeOrder = ALLOWED_ORDER.has(order.toLowerCase()) ? order.toLowerCase() : 'desc';
+
   const where = ['t.org_id = ?'];
   const params = [orgId];
 
@@ -35,7 +40,7 @@ export async function listTickets({ orgId, page = 1, search = '', status, priori
        LEFT JOIN users u ON u.id = t.assignee_id
        JOIN users r ON r.id = t.requester_id
       WHERE ${whereSql}
-      ORDER BY t.${sortBy} ${order}
+      ORDER BY t.${safeSortBy} ${safeOrder}
       LIMIT ? OFFSET ?`,
     [...params, PAGE_SIZE, offset]
   );
