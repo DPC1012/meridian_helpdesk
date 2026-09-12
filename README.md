@@ -4,7 +4,7 @@ A small internal support-desk application. Organisations raise tickets, agents c
 and answer them, everyone comments.
 
 This repository is the starting point for the Bilions Full Stack Developer internship
-exercise. It runs. Read the brief for what to do with it.
+exercise. It runs.
 
 ---
 
