@@ -18,10 +18,12 @@ Assistants used: **opencode** (CLI coding assistant) for the review, fixes, and 
   - The SQL injection finding's "write-capable database" phrase overstates exploitability: `pool.js` does not enable `multipleStatements`, so stacked queries fail. I kept the Critical rating (time/boolean blind extraction is still viable) but corrected the wording.
   - While re-reading, found `TicketList.jsx`'s `useEffect` depends only on `[page]`, so changing search/status/priority/sortBy never refetches — filters are dead UI. Not one of the top 5 and not added to the review (volume is not the metric), but it will silently break Part 2's breached filter unless the deps are handled, so it goes into the Part 2 decision notes.
 
-## Session 3 — Part 2 SLA tracking (to do)
+## Session 3 — Part 2 SLA tracking (done)
 
-- **Asked:** …
-- **Caught wrong / misleading output:** (record genuine mistakes as they happen — a log with no errors is not credible)
+- **Asked:** Build SLA breach tracking per the draft spec — decide the open questions, implement, verify against a fresh `db:reset`, and commit separately from Part 1.
+- **Caught wrong / misleading output:**
+  - My plan treated "findings 6-9 left untouched" as fixed for Part 2 too. The first real check of the breach filter produced page 1 of 15 rows against a `/breached` total of 35 — the pagination off-by-one (Finding 7) was silently skipping the newest, most-prioritised tickets and would have made the feature look broken after `db:reset`. I had assumed it was cosmetic; the actual paged output showed it was not. I changed my own decision, fixed the offset, and recorded it as Q9 in the Part 2 notes and as §8 in `FIXES.md`.
+  - A "verification passed" run against the running dev server later failed every ticket call with `Invalid token`. I first suspected the auth code — which I had not touched. Reading the middleware/routes showed login signs and `requireAuth` verifies with the same `config.jwtSecret`, so the code was consistent; the real cause was the `node --watch` dev server restarting between requests (tokens issued and re-verified in a fresh process mid-flight, and the process later died). I caught it by running an isolated instance on `:5000`, which passed the identical suite. Lesson logged: verify against a process I control when the shared dev server is flapping.
 
 ---
 

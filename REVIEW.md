@@ -1,5 +1,11 @@
 # Part 1 — Code Review
 
+> **Status note on the final repo.** Line references below are the pre-fix baseline.
+> The five findings in "Fixes Applied" were fixed at the end of Part 1, each in its own commit.
+> One remaining finding was later rectified during Part 2 — **Finding 7 (pagination off-by-one)**
+> was fixed because the SLA breach filter made it user-visible; why in `FIXES.md` §8 and
+> `PART2_NOTES.md` Q9. Findings 6, 8, 9 remain unfixed, as documented.
+
 ## Ranked Findings
 
 | # | Severity | Finding | File:Line |
@@ -152,4 +158,4 @@ The following five findings were fixed:
 4. **Finding 4** — Added bcrypt hashing in invite/accept endpoint
 5. **Finding 5** — Added `requireRole('admin')` and org check to `DELETE /api/tickets/:id`
 
-Findings 6-9 are documented but not fixed, per the brief's instructions.
+Findings 6-9 are documented but not fixed, per the brief's instructions (as submitted at the end of Part 1; see the status note at the top for where Finding 7 ended up).
