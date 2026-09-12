@@ -4,7 +4,7 @@
 > The five findings in "Fixes Applied" were fixed at the end of Part 1, each in its own commit.
 > One remaining finding was later rectified during Part 2 — **Finding 7 (pagination off-by-one)**
 > was fixed because the SLA breach filter made it user-visible; why in `FIXES.md` §8 and
-> `PART2_NOTES.md` Q9. Findings 6, 8, 9 remain unfixed, as documented.
+> `DECISION_NOTES.md` Q9. Findings 6, 8, 9 remain unfixed, as documented.
 
 ## Ranked Findings
 
