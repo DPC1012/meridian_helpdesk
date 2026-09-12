@@ -1,6 +1,20 @@
 import { query } from '../db/pool.js';
+import { config } from '../config.js';
 
 const PAGE_SIZE = 20;
+
+const slaHours = Object.entries(config.slaTargets)
+  .map(([priority, hours]) => `WHEN '${priority}' THEN ${hours}`)
+  .join(' ');
+
+// A ticket counts as responded once an agent or admin has ever commented on it.
+// Requester comments and claiming a ticket do not count as a response.
+const RESPONDED_SQL = `EXISTS (
+  SELECT 1 FROM comments c JOIN users cu ON cu.id = c.author_id
+   WHERE c.ticket_id = t.id AND cu.role IN ('agent', 'admin')
+)`;
+const SLA_DUE_SQL = `TIMESTAMPADD(HOUR, CASE t.priority ${slaHours} END, t.created_at)`;
+const IS_BREACHED_SQL = `(NOT ${RESPONDED_SQL} AND NOW() > ${SLA_DUE_SQL})`;
 
 /**
  * Paginated ticket list for the current organisation.
@@ -8,7 +22,7 @@ const PAGE_SIZE = 20;
  * Supports free-text search on subject, filtering by status and priority,
  * and sorting by any column the UI exposes in its dropdown.
  */
-export async function listTickets({ orgId, page = 1, search = '', status, priority, sortBy = 'created_at', order = 'desc' }) {
+export async function listTickets({ orgId, page = 1, search = '', status, priority, breached, sortBy = 'created_at', order = 'desc' }) {
   const ALLOWED_SORT = new Set(['created_at', 'updated_at', 'priority', 'status']);
   const ALLOWED_ORDER = new Set(['asc', 'desc']);
   const safeSortBy = ALLOWED_SORT.has(sortBy) ? sortBy : 'created_at';
@@ -29,13 +43,17 @@ export async function listTickets({ orgId, page = 1, search = '', status, priori
     where.push('t.priority = ?');
     params.push(priority);
   }
+  if (breached === 'true' || breached === '1') {
+    where.push(IS_BREACHED_SQL);
+  }
 
   const whereSql = where.join(' AND ');
-  const offset = page * PAGE_SIZE;
+  const offset = (page - 1) * PAGE_SIZE;
 
   const rows = await query(
     `SELECT t.id, t.subject, t.status, t.priority, t.created_at, t.updated_at,
-            t.assignee_id, u.name AS assignee_name, r.name AS requester_name
+            t.assignee_id, u.name AS assignee_name, r.name AS requester_name,
+            ${IS_BREACHED_SQL} AS is_breached, ${SLA_DUE_SQL} AS sla_due_at
        FROM tickets t
        LEFT JOIN users u ON u.id = t.assignee_id
        JOIN users r ON r.id = t.requester_id
@@ -61,7 +79,8 @@ export async function listTickets({ orgId, page = 1, search = '', status, priori
 
 export async function getTicketById(id) {
   const rows = await query(
-    `SELECT t.*, u.name AS assignee_name, r.name AS requester_name, r.email AS requester_email
+    `SELECT t.*, u.name AS assignee_name, r.name AS requester_name, r.email AS requester_email,
+            ${IS_BREACHED_SQL} AS is_breached, ${SLA_DUE_SQL} AS sla_due_at
        FROM tickets t
        LEFT JOIN users u ON u.id = t.assignee_id
        JOIN users r ON r.id = t.requester_id

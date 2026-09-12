@@ -46,11 +46,12 @@ export default function TicketDetail() {
 
   return (
     <div className="ticket-detail">
-      <h1>{ticket.subject}</h1>
+      <h1>{ticket.subject} {ticket.is_breached ? <span className="badge-sla">BREACHED</span> : null}</h1>
       <p className="meta">
         #{ticket.id} · {ticket.status} · {ticket.priority} ·
         requested by {ticket.requester_name} ({ticket.requester_email})
       </p>
+      {ticket.is_breached ? <p className="meta">Response due: {new Date(ticket.sla_due_at).toLocaleString()}</p> : null}
       <p className="body">{ticket.body}</p>
 
       {!ticket.assignee_id && <button onClick={claim}>Claim this ticket</button>}

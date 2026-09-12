@@ -15,12 +15,14 @@ export default function TicketList() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('');
+  const [breached, setBreached] = useState(false);
   const [sortBy, setSortBy] = useState('created_at');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams({ page, search, status, priority, sortBy, order: 'desc' });
+    if (breached) params.set('breached', 'true');
     api(`/tickets?${params.toString()}`)
       .then((data) => {
         setRows(data.rows);
@@ -28,7 +30,15 @@ export default function TicketList() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [page, search, status, priority, sortBy, breached]);
+
+  // Filters apply from page 1; keep state changes batched so one fetch runs per change.
+  function onFilterChange(setter) {
+    return (e) => {
+      setter(e.target.value);
+      setPage(1);
+    };
+  }
 
   async function handleDelete(id) {
     await api(`/tickets/${id}`, { method: 'DELETE' });
@@ -45,24 +55,35 @@ export default function TicketList() {
         <input
           placeholder="Search subject…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={onFilterChange(setSearch)}
         />
-        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+        <select value={status} onChange={onFilterChange(setStatus)}>
           {STATUSES.map((s) => (
             <option key={s} value={s}>{s || 'Any status'}</option>
           ))}
         </select>
-        <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+        <select value={priority} onChange={onFilterChange(setPriority)}>
           {PRIORITIES.map((p) => (
             <option key={p} value={p}>{p || 'Any priority'}</option>
           ))}
         </select>
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+        <select value={sortBy} onChange={onFilterChange(setSortBy)}>
           <option value="created_at">Created</option>
           <option value="updated_at">Updated</option>
           <option value="priority">Priority</option>
           <option value="status">Status</option>
         </select>
+        <label className="filter-toggle">
+          <input
+            type="checkbox"
+            checked={breached}
+            onChange={(e) => {
+              setBreached(e.target.checked);
+              setPage(1);
+            }}
+          />
+          Breached only
+        </label>
       </div>
 
       {loading && <p>Loading…</p>}
@@ -78,7 +99,7 @@ export default function TicketList() {
           {rows.map((t, i) => (
             <tr key={i}>
               <td>{t.id}</td>
-              <td><Link to={`/tickets/${t.id}`}>{t.subject}</Link></td>
+              <td><Link to={`/tickets/${t.id}`}>{t.subject}</Link>{t.is_breached ? <span className="badge-sla">BREACHED</span> : null}</td>
               <td>{t.status}</td>
               <td>{t.priority}</td>
               <td>{t.assignee_name || '—'}</td>
